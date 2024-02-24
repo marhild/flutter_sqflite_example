@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../database/todo_db.dart';
 import '../model/todo.dart';
@@ -31,6 +32,55 @@ class _TodosPageState extends State<TodosPage> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: const Text('ToDo List'),
+    ),
+    body: FutureBuilder<List<Todo>>(
+      future: futureTodos,
+      builder: (context, snapshot){
+        if(snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else {
+          final todos = snapshot.data!;
+          return todos.isEmpty ? const Center(
+            child: Text(
+              'No todos...',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 28),
+            ),
+          ) : ListView.separated(
+            itemBuilder: (context, index) {
+              final todo = todos[index];
+              final subtitle = DateFormat('yyyy/MM/dd').format(
+                  DateTime.parse(todo.updatedAt ?? todo.createdAt));
+              return ListTile(
+                title: Text(todo.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(subtitle),
+                trailing: IconButton(
+                  onPressed: () async {
+                    await todoDB.delete(todo.id);
+                    fetchTodos();
+                  },
+                  icon:  const Icon(Icons.delete, color: Colors.red),
+                ),
+                onTap: () {
+                  showDialog(
+                      context: context,
+                      builder: (context) => CreateTodoWidget(
+                        todo: todo,
+                        onSubmit: (title) async {
+                          await todoDB.update(id: todo.id, title: title);
+                          fetchTodos();
+                          if(!mounted) return;
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                  ); // showDialog
+                }, // onTab
+              );
+            },
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            itemCount: todos.length,
+          );
+        }
+      },
     ),
     floatingActionButton: FloatingActionButton(
       child: const Icon(Icons.add),

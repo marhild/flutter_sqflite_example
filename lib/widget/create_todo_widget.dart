@@ -45,7 +45,7 @@ class _CreateTodoWidgetState extends State<CreateTodoWidget> {
         ),
         TextButton(
           onPressed: () {
-            if(formKey.currentState!.validate == null) {
+            if(formKey.currentState!.validate()) {
               widget.onSubmit(controller.text);
             }
           },
